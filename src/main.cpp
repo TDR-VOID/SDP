@@ -4,6 +4,28 @@
 #include "SD.h" // SD Cards
 #include "SPI.h" // Serial Peripheral Interface
 
+void writeFile(fs::FS &fs, const char * path, const char * message, bool append = false){
+  Serial.printf("Writing file: %s\n", path);
+
+  File file;
+  if (append) {
+    file = fs.open(path, FILE_APPEND); // Open file in append mode
+  } else {
+    file = fs.open(path, FILE_WRITE); // Open file in write mode
+  }
+
+  if(!file){
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+
+  if(file.print(message)){
+    Serial.println("File written");
+  } else {
+    Serial.println("Write failed");
+  }
+  file.close();
+}
 
 void setup(){
   Serial.begin(115200);
@@ -32,23 +54,14 @@ void setup(){
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
-  //listDir(SD, "/", 0);
-  //createDir(SD, "/mydir");
-  //listDir(SD, "/", 0);
-  //removeDir(SD, "/mydir");
-  //listDir(SD, "/", 2);
-  //writeFile(SD, "/hello.txt", "Hello ");
-  //appendFile(SD, "/hello.txt", "World!\n");
-  //readFile(SD, "/hello.txt");
-  //deleteFile(SD, "/foo.txt");
-  //renameFile(SD, "/hello.txt", "/foo.txt");
-  //readFile(SD, "/foo.txt");
-  //testFileIO(SD, "/test.txt");
-  //Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
-  //Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
 }
 
 void loop(){
-  
-
+for (int i = 0; i < 10; i++) {
+  Serial.println(i);
+  String WriteStr = "Hello" + String(i) + "\n"; 
+  writeFile(SD, "/hello.txt", WriteStr.c_str(), true);
+  delay(1000);
 }
+}
+

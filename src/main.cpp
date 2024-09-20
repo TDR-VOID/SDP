@@ -4,12 +4,16 @@
 #include "SD.h" // SD Cards
 #include "SPI.h" // Serial Peripheral Interface
 
+#define PIR_PIN 13
+
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
 void Task1code( void * pvParameters );
 void Task2code( void * pvParameters );
+
+String sensorValueString;
 
 
 void writeFile(fs::FS &fs, const char * path, const char * message, bool append = false){
@@ -37,6 +41,7 @@ void writeFile(fs::FS &fs, const char * path, const char * message, bool append 
 
 void setup(){
   Serial.begin(115200);
+  pinMode(PIR_PIN, INPUT);
 
 
   xTaskCreatePinnedToCore(
@@ -91,24 +96,47 @@ void setup(){
 
 void Task1code(void * pvParameters) {
   while (1) {  // Run indefinitely
-    for (int i = 0; i < 10; i++) {
-      Serial.println(i);
-      String WriteStr = "Hello " + String(i) + "\n";
-      writeFile(SD, "/hello.txt", WriteStr.c_str(), true);
-      delay(1000);
+
+      // Get the time since the program started
+    unsigned long currentMillis = millis();
+    unsigned long seconds = currentMillis / 1000;
+    unsigned long minutes = seconds / 60;
+    unsigned long hours = minutes / 60;
+
+
+    String timeString = String(hours) + "h " + String(minutes % 60) + "m " + String(seconds % 60) + "s";
+    Serial.print("Elapsed Time: ");
+    Serial.print(timeString);
+
+    // Write the time to the SD card
+    int sensorValue = digitalRead(PIR_PIN);  // Read the PIR sensor value (HIGH or LOW)
+    String txt = timeString + " | "+sensorValueString;
+    Serial.println(txt);
+    writeFile(SD, "/time_log1.txt", txt.c_str(), true);
+
+    delay(1000); // Log every second
     }
   }
-}
-
+  
 
 void Task2code(void * pvParameters) {
   while (1) {  // Run indefinitely
-    for (int j = 2; j < 14; j++) {
-      Serial.println(j);
-      String WriteStr = "Hello " + String(j) + "\n";
-      writeFile(SD, "/hi.txt", WriteStr.c_str(), true);
-      delay(1000);
-    }
+  Serial.println("Task2 Running");
+  int sensorValue = digitalRead(PIR_PIN);  // Read the PIR sensor value (HIGH or LOW)
+  
+  if (sensorValue == HIGH) {
+    Serial.println("Motion Detected!");
+    sensorValueString = "Motion Detected...\n";
+    delay(2000);  // Wait for 2 seconds
+  } else {
+    Serial.println("No Motion");
+    sensorValueString = "No Motion...\n";
+  }
+  
+  delay(500);  // Wait for 1 second before the next reading
   }
 }
 
+void loop(){
+  
+}
